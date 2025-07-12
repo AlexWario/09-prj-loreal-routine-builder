@@ -23,20 +23,55 @@
         <h1 class="site-title">Smart Routine &amp; Product Advisor</h1>
       </header>
 
-      <!-- Category Filter -->
-      <div class="search-section">
-        <select id="categoryFilter">
-          <option value="" disabled selected>Choose a Category</option>
-          <option value="cleanser">Cleansers</option>
-          <option value="moisturizer">Moisturizers & Treatments</option>
-          <option value="haircare">Haircare</option>
-          <option value="makeup">Makeup</option>
-          <option value="hair color">Hair Color</option>
-          <option value="hair styling">Hair Styling</option>
-          <option value="men's grooming">Men's Grooming</option>
-          <option value="suncare">Suncare</option>
-          <option value="fragrance">Fragrance</option>
-        </select>
+      <!-- Category Filter and Search -->
+      <div class="filters-section">
+        <div class="search-section">
+          <select id="categoryFilter">
+            <option value="" disabled selected>
+              ✨ Choose a Category to Explore
+            </option>
+            <option value="cleanser">🧼 Cleansers</option>
+            <option value="moisturizer">💧 Moisturizers & Treatments</option>
+            <option value="haircare">💇‍♀️ Haircare</option>
+            <option value="makeup">💄 Makeup</option>
+            <option value="hair color">🎨 Hair Color</option>
+            <option value="hair styling">✨ Hair Styling</option>
+            <option value="men's grooming">🧔 Men's Grooming</option>
+            <option value="suncare">☀️ Suncare</option>
+            <option value="fragrance">🌸 Fragrance</option>
+          </select>
+        </div>
+
+        <div class="product-search-section">
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-search search-icon"></i>
+            <input
+              type="text"
+              id="productSearch"
+              placeholder="🔍 Search products by name or keyword..."
+              autocomplete="off"
+            />
+            <button
+              id="clearSearch"
+              class="clear-search-btn"
+              title="Clear search"
+            >
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Language Toggle -->
+        <div class="language-toggle">
+          <button
+            id="languageToggle"
+            class="language-btn"
+            title="Toggle RTL/LTR"
+          >
+            <i class="fa-solid fa-language"></i>
+            <span id="languageText">عربي</span>
+          </button>
+        </div>
       </div>
 
       <!-- Products Grid -->
@@ -44,17 +79,20 @@
 
       <!-- Selected Products -->
       <div class="selected-products">
-        <h2>Selected Products</h2>
+        <h2>💝 Your Selected Products</h2>
         <div id="selectedProductsList"></div>
         <button id="generateRoutine" class="generate-btn">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Generate My Custom
+          Routine
         </button>
       </div>
 
       <!------- Chat Area ------->
       <section class="chatbox">
-        <h2>Let's Build Your Routine</h2>
-        <div id="chatWindow" class="chat-window"></div>
+        <h2>💬 Let's Build Your Perfect Routine</h2>
+        <div id="chatWindow" class="chat-window">
+          <!-- Chat messages will be populated by JavaScript -->
+        </div>
 
         <form id="chatForm" class="chat-form">
           <label for="userInput" class="visually-hidden">Message</label>
@@ -62,7 +100,7 @@
             id="userInput"
             name="userInput"
             type="text"
-            placeholder="Ask me about products or routines…"
+            placeholder="💬 Ask me about products, routines, or beauty tips..."
             autocomplete="off"
             required
           />
