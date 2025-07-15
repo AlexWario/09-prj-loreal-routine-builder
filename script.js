@@ -623,157 +623,67 @@ Format your response in a clear, easy-to-follow manner.`;
   }
 }
 
-/* Call OpenAI API with optional web search */
+/* Call Cloudflare Worker instead of OpenAI directly */
 async function callOpenAI(
   systemPrompt,
   userPrompt,
   includeHistory = false,
   enableWebSearch = false
 ) {
-  // Check if API key is available
-  if (typeof OPENAI_API_KEY === "undefined" || !OPENAI_API_KEY) {
-    throw new Error(
-      "OpenAI API key not found. Please add your API key to secrets.js"
-    );
-  }
+  // Your Cloudflare Worker URL
+  const WORKER_URL = "https://kingvon.alexwario127.workers.dev";
 
-  // Build messages array
-  let messages = [];
-
-  // Add system prompt with web search instruction if enabled
-  if (systemPrompt) {
-    let enhancedSystemPrompt = systemPrompt;
-    if (enableWebSearch) {
-      enhancedSystemPrompt +=
-        "\n\nIMPORTANT: When discussing L'Oréal products, beauty trends, or skincare advice, please search for current information and include recent findings, product launches, reviews, or trends. Always cite your sources with links when providing current information.";
-    }
-    messages.push({ role: "system", content: enhancedSystemPrompt });
-  }
-
-  // Include conversation history if requested
-  if (includeHistory && conversationHistory.length > 0) {
-    messages = messages.concat(conversationHistory);
-  }
-
-  // Add current user prompt
-  messages.push({ role: "user", content: userPrompt });
-
-  const requestBody = {
-    model: "gpt-4o",
-    messages: messages,
-    max_tokens: 1500,
-    temperature: 0.7,
-  };
-
-  // Add web search tool if enabled (using function calling)
-  if (enableWebSearch) {
-    requestBody.tools = [
-      {
-        type: "function",
-        function: {
-          name: "web_search",
-          description:
-            "Search the web for current information about L'Oréal products, beauty trends, skincare advice, or cosmetics",
-          parameters: {
-            type: "object",
-            properties: {
-              query: {
-                type: "string",
-                description: "The search query for current information",
-              },
-            },
-            required: ["query"],
-          },
-        },
-      },
-    ];
-    requestBody.tool_choice = "auto";
-  }
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      `OpenAI API error: ${errorData.error?.message || "Unknown error"}`
-    );
-  }
-
-  const data = await response.json();
-
-  // Handle function calls for web search
-  if (data.choices[0].message.tool_calls) {
-    const toolCall = data.choices[0].message.tool_calls[0];
-    if (toolCall.function.name === "web_search") {
-      const searchQuery = JSON.parse(toolCall.arguments).query;
-      const searchResults = await performWebSearch(searchQuery);
-
-      // Add search results to the conversation and get final response
-      messages.push(data.choices[0].message);
-      messages.push({
-        role: "tool",
-        tool_call_id: toolCall.id,
-        content: searchResults,
-      });
-
-      const finalResponse = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: messages,
-            max_tokens: 1500,
-            temperature: 0.7,
-          }),
-        }
-      );
-
-      const finalData = await finalResponse.json();
-      return finalData.choices[0].message.content;
-    }
-  }
-
-  return data.choices[0].message.content;
-}
-
-/* Perform web search using a search API */
-async function performWebSearch(query) {
   try {
-    // Using Bing Search API as an example - you would need to implement your own search
-    // For now, we'll simulate web search results with current L'Oréal information
-    const searchResults = `
-Recent search results for "${query}":
+    // Build messages array
+    let messages = [];
 
-🔍 **Current L'Oréal Information:**
-• L'Oréal continues to lead in sustainable beauty with new eco-friendly packaging initiatives
-• Latest product launches include advanced anti-aging serums with retinol and vitamin C
-• Current trending ingredients: Hyaluronic acid, Niacinamide, and Bakuchiol as retinol alternative
-• L'Oréal's Revitalift and Youth Code lines have received excellent reviews in 2025
-• New haircare innovations include bond-building treatments and color-safe formulas
+    // Add system prompt with web search instruction if enabled
+    if (systemPrompt) {
+      let enhancedSystemPrompt = systemPrompt;
+      if (enableWebSearch) {
+        enhancedSystemPrompt +=
+          "\n\nIMPORTANT: When discussing L'Oréal products, beauty trends, or skincare advice, please search for current information and include recent findings, product launches, reviews, or trends. Always cite your sources with links when providing current information.";
+      }
+      messages.push({ role: "system", content: enhancedSystemPrompt });
+    }
 
-📱 **Sources:**
-• L'Oréal Official Website: https://www.loreal.com
-• Beauty Industry Reports: Current market trends and product reviews
-• Dermatologist recommendations: Evidence-based skincare advice
+    // Include conversation history if requested
+    if (includeHistory && conversationHistory.length > 0) {
+      messages = messages.concat(conversationHistory);
+    }
 
-*Note: For real-time web search, configure a search API like Bing or Google Custom Search*
-    `;
+    // Add current user prompt
+    messages.push({ role: "user", content: userPrompt });
 
-    return searchResults;
+    // Call the worker
+    const response = await fetch(`${WORKER_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: messages,
+        enableWebSearch: enableWebSearch,
+        userQuery: enableWebSearch ? userPrompt : "",
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `Worker API error: ${errorData.error || "Unknown error"}`
+      );
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
   } catch (error) {
-    return `Unable to fetch current web results. Providing information based on general knowledge about L'Oréal products and beauty trends.`;
+    console.error("Worker API call failed:", error);
+
+    // Fallback error message
+    throw new Error(
+      `Failed to get AI response: ${error.message}. Please try again.`
+    );
   }
 }
 
